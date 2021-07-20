@@ -27,7 +27,7 @@ type Prioritizable interface {
 	Done()
 	DeleteAllMessagesFromTab(tabID int64) error
 	DeleteMessage(msgID int64) error
-	FlightTime(origin, destination Coordinate, speed Speed, ships ShipsInfos) (secs, fuel int64)
+	FlightTime(origin, destination Coordinate, speed Speed, ships ShipsInfos, mission MissionID) (secs, fuel int64)
 	GalaxyInfos(galaxy, system int64, opts ...Option) (SystemInfos, error)
 	GetAlliancePageContent(url.Values) ([]byte, error)
 	GetAllResources() (map[CelestialID]Resources, error)
@@ -47,6 +47,7 @@ type Prioritizable interface {
 	GetFleets(...Option) ([]Fleet, Slots)
 	GetFleetsFromEventList() []Fleet
 	GetItems(CelestialID) ([]Item, error)
+	GetActiveItems(CelestialID) ([]ActiveItem, error)
 	GetMoon(interface{}) (Moon, error)
 	GetMoons() []Moon
 	GetPageContent(url.Values) ([]byte, error)
@@ -267,7 +268,7 @@ type Extractor interface {
 	ExtractFleetsFromEventList(pageHTML []byte) []Fleet
 	ExtractDestroyRockets(pageHTML []byte) (abm, ipm int64, token string, err error)
 	ExtractIPM(pageHTML []byte) (duration, max int64, token string)
-	ExtractFleets(pageHTML []byte) (res []Fleet)
+	ExtractFleets(pageHTML []byte, location *time.Location) (res []Fleet)
 	ExtractSlots(pageHTML []byte) Slots
 	ExtractOgameTimestamp(pageHTML []byte) int64
 	ExtractResources(pageHTML []byte) Resources
@@ -330,7 +331,7 @@ type Extractor interface {
 	ExtractResourceSettingsFromDoc(doc *goquery.Document) (ResourceSettings, error)
 	ExtractFleetsFromEventListFromDoc(doc *goquery.Document) []Fleet
 	ExtractIPMFromDoc(doc *goquery.Document) (duration, max int64, token string)
-	ExtractFleetsFromDoc(doc *goquery.Document) (res []Fleet)
+	ExtractFleetsFromDoc(doc *goquery.Document, location *time.Location) (res []Fleet)
 	ExtractSlotsFromDoc(doc *goquery.Document) Slots
 	ExtractServerTimeFromDoc(doc *goquery.Document) (time.Time, error)
 	ExtractSpioAnzFromDoc(doc *goquery.Document) int64
@@ -401,6 +402,7 @@ type Extractor interface {
 	ExtractAllResources(pageHTML []byte) (map[CelestialID]Resources, error)
 	ExtractDMCosts(pageHTML []byte) (DMCosts, error)
 	ExtractBuffActivation(pageHTML []byte) (string, []Item, error)
+	ExtractActiveItems(pageHTML []byte) ([]ActiveItem, error)
 	ExtractIsMobile(pageHTML []byte) bool
 	ExtractIsMobileFromDoc(doc *goquery.Document) bool
 }

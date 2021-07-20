@@ -544,13 +544,13 @@ func (b *Prioritize) GetResourcesProductionsLight(resBuildings ResourcesBuilding
 }
 
 // FlightTime calculate flight time and fuel needed
-func (b *Prioritize) FlightTime(origin, destination Coordinate, speed Speed, ships ShipsInfos) (secs, fuel int64) {
+func (b *Prioritize) FlightTime(origin, destination Coordinate, speed Speed, ships ShipsInfos, missionID MissionID) (secs, fuel int64) {
 	b.begin("FlightTime")
 	defer b.done()
 	researches := b.bot.getCachedResearch()
 	return CalcFlightTime(origin, destination, b.bot.serverData.Galaxies, b.bot.serverData.Systems,
 		b.bot.serverData.DonutGalaxy, b.bot.serverData.DonutSystem, b.bot.serverData.GlobalDeuteriumSaveFactor,
-		float64(speed)/10, b.bot.serverData.SpeedFleet, ships, researches, b.bot.characterClass)
+		float64(speed)/10, GetFleetSpeedForMission(b.bot.IsV81(), b.bot.serverData, missionID), ships, researches, b.bot.characterClass)
 }
 
 // Phalanx scan a coordinate from a moon to get fleets information
@@ -659,6 +659,13 @@ func (b *Prioritize) GetItems(celestialID CelestialID) ([]Item, error) {
 	b.begin("GetItems")
 	defer b.done()
 	return b.bot.getItems(celestialID)
+}
+
+// GetActiveItems ...
+func (b *Prioritize) GetActiveItems(celestialID CelestialID) ([]ActiveItem, error) {
+	b.begin("GetActiveItems")
+	defer b.done()
+	return b.bot.getActiveItems(celestialID)
 }
 
 // ActivateItem activate an item
