@@ -320,6 +320,7 @@ func start(c *cli.Context) error {
 	e.POST("/bot/planets/:planetID/cancel-research", ogame.CancelResearchHandler)
 	e.GET("/bot/planets/:planetID/resources", ogame.GetResourcesHandler)
 	e.POST("/bot/planets/:planetID/send-fleet", ogame.SendFleetHandler)
+	e.POST("/bot/planets/:planetID/predict-fleet", ogame.PredictFleetHandler)
 	e.POST("/bot/planets/:planetID/send-ipm", ogame.SendIPMHandler)
 	e.GET("/bot/moons/:moonID/phalanx/:galaxy/:system/:position", ogame.PhalanxHandler)
 	e.POST("/bot/moons/:moonID/jump-gate", ogame.JumpGateHandler)

@@ -862,11 +862,11 @@ func SendFleetHandler(c echo.Context) error {
 				ships = append(ships, Quantifiable{ID: ID(shipID), Nbr: nbr})
 			}
 		case "speed":
-			speedInt, err := strconv.ParseInt(values[0], 10, 64)
-			if err != nil || speedInt < 0 || speedInt > 10 {
+			speedFloat, err := strconv.ParseFloat(values[0], 64)
+			if err != nil || speedFloat < 0 || speedFloat > 10 {
 				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid speed"))
 			}
-			speed = Speed(speedInt)
+			speed = Speed(speedFloat)
 		case "galaxy":
 			galaxy, err := strconv.ParseInt(values[0], 10, 64)
 			if err != nil {
@@ -949,6 +949,86 @@ func SendFleetHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, ErrorResp(500, err.Error()))
 	}
 	return c.JSON(http.StatusOK, SuccessResp(fleet))
+}
+
+// PredictFleetHandler ...
+// curl 127.0.0.1:1234/bot/planets/123/predict-fleet -d 'ships=203,1&ships=204,10&speed=10&galaxy=1&system=1&type=1&position=1&mission=3&metal=1&crystal=2&deuterium=3'
+func PredictFleetHandler(c echo.Context) error {
+	bot := c.Get("bot").(*OGame)
+	planetID, err := strconv.ParseInt(c.Param("planetID"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid planet id"))
+	}
+
+	if err := c.Request().ParseForm(); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid form"))
+	}
+
+	var ships []Quantifiable
+	where := Coordinate{Type: PlanetType}
+	mission := Transport
+	speed := HundredPercent
+	for key, values := range c.Request().PostForm {
+		switch key {
+		case "ships":
+			for _, s := range values {
+				a := strings.Split(s, ",")
+				shipID, err := strconv.ParseInt(a[0], 10, 64)
+				if err != nil || !IsShipID(shipID) {
+					return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid ship id "+a[0]))
+				}
+				nbr, err := strconv.ParseInt(a[1], 10, 64)
+				if err != nil || nbr < 0 {
+					return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid nbr "+a[1]))
+				}
+				ships = append(ships, Quantifiable{ID: ID(shipID), Nbr: nbr})
+			}
+		case "speed":
+			speedFloat, err := strconv.ParseFloat(values[0], 64)
+			if err != nil || speedFloat < 0 || speedFloat > 10 {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid speed"))
+			}
+			speed = Speed(speedFloat)
+		case "galaxy":
+			galaxy, err := strconv.ParseInt(values[0], 10, 64)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid galaxy"))
+			}
+			where.Galaxy = galaxy
+		case "system":
+			system, err := strconv.ParseInt(values[0], 10, 64)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid system"))
+			}
+			where.System = system
+		case "position":
+			position, err := strconv.ParseInt(values[0], 10, 64)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid position"))
+			}
+			where.Position = position
+		case "type":
+			t, err := strconv.ParseInt(values[0], 10, 64)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid type"))
+			}
+			where.Type = CelestialType(t)
+		case "mission":
+			missionInt, err := strconv.ParseInt(values[0], 10, 64)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, ErrorResp(400, "invalid mission"))
+			}
+			mission = MissionID(missionInt)
+		}
+	}
+	celestial := bot.GetCachedCelestial(CelestialID(planetID))
+	var shipsInfos = ShipsInfos{}.FromQuantifiables(ships)
+	time, fuel := bot.CalcFlightTime(celestial.GetCoordinate(), where, speed.Float64(), shipsInfos, mission)
+	var fleetPrediction FleetPrediction
+	fleetPrediction.Time = time
+	fleetPrediction.Fuel = fuel
+
+	return c.JSON(http.StatusOK, SuccessResp(fleetPrediction))
 }
 
 // GetAlliancePageContentHandler ...
